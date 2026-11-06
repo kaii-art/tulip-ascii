@@ -6,28 +6,28 @@
 <title>Tulip for my baby baby</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  /* ภาพเต็มหน้าต่างเบราว์เซอร์ (ขยายให้ใหญ่ที่สุดโดยไม่ตัดดอกไม้ ส่วนที่เหลือเป็นสีดำ) */
+
   canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block;
     object-fit: contain; background: #000; }
 </style>
 </head>
 <body>
-<canvas id="view" aria-label="ช่อดอกลิลลี่ที่วาดด้วยตัวอักษร"></canvas>
+<canvas id="view" aria-label="0000"></canvas>
 
 <script>
 "use strict";
-// ================================================================ ตั้งค่า
+
 const FONT_SIZE = 10, FPS = 30;
 const FONT = `${FONT_SIZE}px Menlo, Consolas, "DejaVu Sans Mono", "Courier New", monospace`;
 const probe = document.createElement("canvas").getContext("2d");
 probe.font = FONT;
 const CW = Math.max(1, Math.round(probe.measureText("M").width)), CH = Math.round(FONT_SIZE * 1.15);
-// ตารางตัวอักษร: สูง 160 แถวเสมอ ส่วนความกว้างปรับตามสัดส่วนหน้าต่าง -> ภาพเต็มเบราว์เซอร์พอดี
+
 const ROWS = 160;
 const COLS = Math.max(150, Math.min(640, Math.round(ROWS * CH / CW * innerWidth / Math.max(1, innerHeight))));
 const N = COLS * ROWS;
 const WAVE_PERIOD = 14, BREATH = 7, BREATH_DEPTH = 0.18;
-const settings = { wind: 3, size: 1.8, glow: 0.6 };   // แรงลม, ขนาดดอก, แสงฟุ้ง
+const settings = { wind: 3, size: 1.8, glow: 0.6 };   
 
 const BUCKETS = [" ", ".'`", ":;,-~", "!/\\|()[]{}<>?+=", "tfjrxnuvczil", "XYUJCLQ0OZmwqpdbkhao", "#MW&8%B", "@$"];
 const LEVELS = [0.06, 0.15, 0.30, 0.45, 0.60, 0.75, 0.90];
@@ -42,7 +42,7 @@ const PALETTES = {
   coral:  { deep: [0.88, 0.30, 0.22], mid: [1.00, 0.55, 0.45], tip: [1.00, 0.84, 0.74], sheen: [1.00, 0.92, 0.85], spots: 5 },
   red:    { deep: [0.30, 0.01, 0.05], mid: [0.72, 0.03, 0.10], tip: [0.92, 0.22, 0.30], sheen: [1.00, 0.52, 0.58], spots: 9 },
 };
-// (ตำแหน่ง, ขนาด, ทิศดอก 3D, สี, วินาทีที่เริ่มบาน, ความสว่าง) — เรียงจากหลังไปหน้า
+
 const FLOWERS_BASE = [
   [[-25, 34], 15, [-0.5, -0.55, 0.68], "white", 5.4, 0.78],
   [[24, 30], 15, [0.5, -0.6, 0.62], "yellow", 5.8, 0.78],
@@ -56,7 +56,7 @@ const FLOWERS_BASE = [
   [[18, 88], 21, [0.3, -0.14, 0.94], "white", 4.2, 1.0],
   [[1, 114], 20, [0.02, -0.28, 0.96], "coral", 4.6, 1.0],
 ];
-// ดอกตูม (ตำแหน่ง, ขนาด, ทิศ, ความสุก, สี)
+
 const BUDS_BASE = [
   [[-12, 10], 9, [-0.3, -0.95, 0.1], 0.0, "red"],
   [[13, 7], 9, [0.35, -0.93, 0.1], 0.9, "pink"],
@@ -65,12 +65,11 @@ const BUDS_BASE = [
   [[24, 68], 7, [0.6, -0.7, 0.3], 0.0, "red"],
 ];
 
-// ================================================================ คณิตศาสตร์
 const TAU = Math.PI * 2, rad = (d) => d * Math.PI / 180;
 const clamp = (x, lo = 0, hi = 1) => (x < lo ? lo : x > hi ? hi : x);
 function smoothstep(a, b, x) { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); }
 const wave = (t, k, ph = 0) => Math.sin(TAU * k * t / WAVE_PERIOD + ph);
-function hash3(a, b, c) {                       // สุ่มแบบคงที่: ใส่เลขเดิมได้ผลเดิม
+function hash3(a, b, c) {                      
   let h = (Math.imul(a, 73856093) ^ Math.imul(b, 19349663) ^ Math.imul(c, 83492791)) >>> 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
   return (h ^ (h >>> 16)) >>> 0;
@@ -83,20 +82,19 @@ const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a
 const norm = (v) => mul(v, 1 / (Math.hypot(v[0], v[1], v[2]) + 1e-9));
 const LIGHT = norm([-0.5, -0.6, 0.62]);        // แสงจากซ้ายบน
 
-// ================================================================ ผ้าใบ (ความสว่าง + สี ของแต่ละช่อง)
+
 const Xc = new Float32Array(COLS), Yr = new Float32Array(ROWS);
-for (let c = 0; c < COLS; c++) Xc[c] = (c + 0.5 - COLS / 2) * 0.5;   // ช่องกว้างครึ่งหนึ่งของความสูง
+for (let c = 0; c < COLS; c++) Xc[c] = (c + 0.5 - COLS / 2) * 0.5;  
 for (let r = 0; r < ROWS; r++) Yr[r] = r + 0.5;
 const lum = new Float32Array(N), rgb = new Float32Array(N * 3), rowShift = new Float32Array(ROWS);
 const bgLum = new Float32Array(N), bgRgb = new Float32Array(N * 3);
-for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {       // จุดม่วงจาง ๆ หลังช่อดอก
+for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {       
   const r2 = (Xc[c] / Math.max(40, COLS * 0.21)) ** 2 + ((Yr[r] - 75) / 80) ** 2, i = r * COLS + c;
   if (hash3(r, c, 1) % 100 < 35) { bgLum[i] = 0.13 * Math.exp(-r2 * 1.6); bgRgb.set([0.45, 0.2, 0.55], i * 3); }
 }
 function set(i, l, cr, cg, cb) { lum[i] = l; const j = i * 3; rgb[j] = cr; rgb[j + 1] = cg; rgb[j + 2] = cb; }
 
-// วาดรูปเรียวไปตามเส้นโค้ง: เรียก fn(ช่อง, ตำแหน่งตามยาว a, ระยะขวาง q -1..1, แถว, คอลัมน์) ทุกช่องที่อยู่ข้างใน
-const SEG = new Float64Array(16 * 9);            // ข้อมูลแต่ละท่อน (คำนวณครั้งเดียวต่อการวาด)
+const SEG = new Float64Array(16 * 9);           
 function brush(pts, hws, av, fn) {
   const n = pts.length, ns = n - 1;
   if (n < 2) return;
@@ -114,8 +112,8 @@ function brush(pts, hws, av, fn) {
   const pad = maxw + 1;
   const r0 = Math.max(0, Math.floor(ymin - pad)), r1 = Math.min(ROWS, Math.ceil(ymax + pad));
   for (let r = r0; r < r1; r++) {
-    const py = Yr[r], sh = rowShift[r];                // ลมเลื่อนแถวนี้ไปเท่าไหร่ -> เลื่อนกรอบตาม
-    let rx0 = 1e9, rx1 = -1e9;                          // ช่วงแนวนอนที่รูปผ่านแถวนี้จริง ๆ
+    const py = Yr[r], sh = rowShift[r];                
+    let rx0 = 1e9, rx1 = -1e9;                         
     for (let s = 0, o = 0; s < ns; s++, o += 9) {
       const pw = Math.max(SEG[o + 5], SEG[o + 5] + SEG[o + 6]) + 1;
       const ya = SEG[o + 1], yb = ya + SEG[o + 3];
@@ -128,7 +126,7 @@ function brush(pts, hws, av, fn) {
     const c1 = Math.min(COLS, Math.ceil((rx1 + sh) * 2 + COLS / 2));
     for (let c = c0; c < c1; c++) {
       const px = Xc[c] - sh;
-      let best = 1, bestS = -1, bestU = 0;            // เก็บแบบยกกำลังสอง (ไม่ต้องถอดราก)
+      let best = 1, bestS = -1, bestU = 0;           
       for (let s = 0, o = 0; s < ns; s++, o += 9) {
         const qx = px - SEG[o], qy = py - SEG[o + 1], dx = SEG[o + 2], dy = SEG[o + 3];
         let u = (qx * dx + qy * dy) * SEG[o + 4];
@@ -150,7 +148,7 @@ function brush(pts, hws, av, fn) {
 const lin = (n) => Array.from({ length: n }, (_, k) => k / (n - 1));
 const lerp3 = (a, b, k) => { k = clamp(k); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; };
 
-// ================================================================ ก้าน / ใบ
+
 function tube(pts, w0, w1, col) {
   const n = pts.length;
   if (n < 2) return;
